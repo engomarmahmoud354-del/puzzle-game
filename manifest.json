@@ -1,0 +1,10 @@
+{
+  "name": "لعبة البازل",
+  "short_name": "البازل",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#eef4ff",
+  "theme_color": "#3978e8",
+  "lang": "ar",
+  "dir": "rtl"
+}

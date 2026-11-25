@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<link rel="manifest" href="./manifest.json">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>لعبة البازل</title>
+
+  <style>
+    * { box-sizing: border-box; }
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js");
+    });
+  }
+</script>
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      font-family: system-ui, sans-serif;
+      color: #183153;
+      background: #eef4ff;
+    }
+
+    main {
+      width: min(100%, 420px);
+      text-align: center;
+    }
+
+    h1 { margin-bottom: 8px; }
+    p { color: #52657f; }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 24px 0;
+      padding: 8px;
+      border-radius: 18px;
+      background: #cbd8ee;
+      touch-action: manipulation;
+    }
+
+    .tile {
+      aspect-ratio: 1;
+      border: 0;
+      border-radius: 12px;
+      background: #3978e8;
+      color: white;
+      font-size: clamp(22px, 8vw, 36px);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tile:active { transform: scale(.96); }
+    .empty { visibility: hidden; }
+
+    button#new-game {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 22px;
+      background: #183153;
+      color: white;
+      font-size: 17px;
+      cursor: pointer;
+    }
+
+    #message {
+      min-height: 28px;
+      font-weight: 700;
+      color: #198754;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>🧩 لعبة البازل</h1>
+    <p>رتّب الأرقام من 1 إلى 15. اضغط رقمًا بجوار المربع الفارغ لتحريكه.</p>
+
+    <div id="board" aria-label="لوحة البازل"></div>
+
+    <button id="new-game">لعبة جديدة</button>
+    <p id="message" aria-live="polite"></p>
+  </main>
+
+  <script>
+    const board = document.querySelector("#board");
+    const message = document.querySelector("#message");
+    const newGameButton = document.querySelector("#new-game");
+
+    let tiles = [];
+
+    function isSolvable(values) {
+      let inversions = 0;
+
+      for (let i = 0; i < values.length; i++) {
+        if (values[i] === 0) continue;
+
+        for (let j = i + 1; j < values.length; j++) {
+          if (values[j] !== 0 && values[i] > values[j]) {
+            inversions++;
+          }
+        }
+      }
+
+      // في لوحة 4×4، تكون اللعبة قابلة للحل إذا كان
+      // مجموع الانقلابات ورقم صف الفراغ من الأسفل فرديًا.
+      const blankIndex = values.indexOf(0);
+      const blankRowFromBottom = 4 - Math.floor(blankIndex / 4);
+
+      return (inversions + blankRowFromBottom) % 2 === 1;
+    }
+
+    function startGame() {
+      do {
+        tiles = Array.from({ length: 16 }, (_, i) => (i + 1) % 16);
+        tiles.sort(() => Math.random() - 0.5);
+      } while (!isSolvable(tiles));
+
+      message.textContent = "";
+      render();
+    }
+
+    function render() {
+      board.innerHTML = "";
+
+      tiles.forEach((value, index) => {
+        const tile = document.createElement("button");
+        tile.className = value === 0 ? "tile empty" : "tile";
+        tile.textContent = value === 0 ? "" : value;
+        tile.setAttribute("aria-label", value === 0 ? "فارغ" : `رقم ${value}`);
+
+        tile.addEventListener("click", () => moveTile(index));
+        board.appendChild(tile);
+      });
+
+      if (tiles.every((value, index) => value === (index + 1) % 16)) {
+        message.textContent = "أحسنت! حللت البازل 🎉";
+      }
+    }
+
+    function moveTile(index) {
+      const blankIndex = tiles.indexOf(0);
+      const sameRow = Math.floor(index / 4) === Math.floor(blankIndex / 4);
+      const nextToBlank =
+        (sameRow && Math.abs(index - blankIndex) === 1) ||
+        Math.abs(index - blankIndex) === 4;
+
+      if (!nextToBlank) return;
+
+      [tiles[index], tiles[blankIndex]] = [tiles[blankIndex], tiles[index]];
+      render();
+    }
+
+    newGameButton.addEventListener("click", startGame);
+    startGame();
+  </script>
+</body>
+</html>
